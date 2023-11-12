@@ -13,7 +13,7 @@ scrsize = get(0,'ScreenSize');
 % set resolution to 720p :D
 figPos = [30, 50, 1280, 720];
 global fig1
-fig1 = figure("Position", figPos, 'Color', [0,0,0], 'Toolbar', 'None', 'KeyPressFcn', @keyDownListener);
+fig1 = figure("Position", figPos, 'Color', [0,0,0], 'Toolbar', 'None', 'KeyPressFcn', @keyDownListener, 'KeyReleaseFcn', @keyReleaseListener);
 
 % define axis limits - still need to change
 xmax = 1280;
@@ -32,9 +32,6 @@ axis on % Do not display axis or
 
 %% define constants!!
 
-% height & width
-h = 7; %m
-w = 9.5; %m
 
 % total mass
 global fuel t_mass lm_mass
@@ -44,7 +41,7 @@ lm_mass = 6950; %kg
 
 % thrust things 
 global thrust_max
-thrust_max = 10; 
+thrust_max = 200; 
 % prev value was 47000 N
 
 global R
@@ -414,8 +411,8 @@ function CalcLEMPos()
     throttle_frac = str2num(throttleBox.String);
 
     % calculate values here 
-    az = ((throttle_frac*thrust_max*cosd(th))/prop_consump) - (g-((vertVel^2)/(R+alt)));
-    ax = (((throttle_frac*thrust_max*sind(th))/prop_consump));
+    az = ((throttle_frac*thrust_max*cosd(-th))/prop_consump) - (g-((vertVel^2)/(R+YPos)));
+    ax = (((throttle_frac*thrust_max*sind(-th))/prop_consump));
 
     %omit fuel consumption rate calc?
 
@@ -424,6 +421,8 @@ function CalcLEMPos()
 
     horzVel = horzVel + ax*dt;
     vertVel = vertVel + az*dt;
+
+
 
     fuel = fuel - prop_consump*dt; % times time STEP!!!!
     t_mass = lm_mass + fuel; % STILL NEED TIME STEP
@@ -484,7 +483,7 @@ function keyDownListener(src, event)
             set(angleBox, 'String', num2str(th));
             %rotateLander();
         case 'space'
-            throttle_frac = throttle_frac + 0.01;
+            throttle_frac = throttle_frac + 0.05;
             set(throttleBox, 'String', num2str(throttle_frac));
             if throttle_frac > .59
 
@@ -496,4 +495,24 @@ function keyDownListener(src, event)
     end
 
 end
+
+% to handle fun throttle functionality
+function keyReleaseListener(~, event)
+
+    global keyID
+    global throttleBox
+    global throttle_frac
+        
+    keyID = event.Key;
+
+    switch keyID
+
+        case 'space'
+            throttle_frac = 0;
+            set(throttleBox, 'String', num2str(throttle_frac));
+    end
+
+end
+
+
 
