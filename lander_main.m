@@ -41,7 +41,7 @@ lm_mass = 6950; %kg
 
 % thrust things 
 global thrust_max
-thrust_max = 200; 
+thrust_max = 400; 
 % prev value was 47000 N
 
 global R
@@ -50,7 +50,7 @@ R = 1.738*10^6;
 % only 60% of max thrust is throttleable unless landing is aborted!
 global prop_consump
 %prop_consump = 3.28*10^-4; 
-prop_consump = 10;
+prop_consump = 50;
 
 % initial conditions
 global th alt horzVel vertVel throttle_frac
@@ -69,7 +69,7 @@ max_horz_vel = 1.5; %m/s
 max_angle = 6; %deg
 
 % init global variables!
-global g
+global g xVals yVals
 global angleBox vertvelBox massBox fuelBox horzvelBox altBox
 global startButton optionButton
 global gameHasStarted
@@ -269,7 +269,7 @@ function Start(src, event)
 
     % reset from title screen!
     global gameHasStarted
-    global g XPos YPos
+    global g XPos YPos xVals yVals
     global angleBox horzvelBox vertvelBox massBox fuelBox altBox throttleBox
     global th alt horzVel vertVel throttle_frac fuel t_mass
     global startButton optionButton
@@ -313,6 +313,11 @@ function Start(src, event)
         set(startButton, 'Enable', 'off')
     end
     drawLEM();
+    
+    % define tolerance for collisions
+    x_tol = 80;
+    y_tol = 10;
+    
 
     % main game loop?!?
     gameHasStarted = true;
@@ -321,8 +326,12 @@ function Start(src, event)
         % run calc pos function here 
         CalcLEMPos();
         pause(.05)
-        % if y position is less than terrain  Y value for lander xPos
-        if YPos <= 200
+
+        % still trying to work out collision shit
+        %[ii, jj] = find(abs(yVals-YPos) < y_tol);
+        %disp(ii)
+
+        if YPos <= 100
             gameHasStarted = false;
 
         end
@@ -342,7 +351,7 @@ function generateTerrain()
     global terrainHasGenerated
     
     % create series of points!
-    xVals = [0:50:1280];
+    xVals = [0:80:1280];
     yVals = [];
     num_pts_y = length(xVals);
     
@@ -487,7 +496,7 @@ function keyDownListener(src, event)
             set(throttleBox, 'String', num2str(throttle_frac));
             if throttle_frac > .59
 
-                disp("Max throttle reached")
+                %disp("Max throttle reached")
                 throttle_frac = .59;
                     
             end
