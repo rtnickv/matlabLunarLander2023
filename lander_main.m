@@ -25,7 +25,7 @@ ymin = 0;
 axis manual % Disable automatic axis scaling
 axis equal % Set axis aspect ratio to 1
 axis([xmin, xmax, ymin, ymax]) % Set axis limits
-axis on % Do not display axis or
+axis off  % Do not display axis or
 
 % axes background in figure
 
@@ -36,12 +36,12 @@ axis on % Do not display axis or
 % total mass
 global fuel t_mass lm_mass
 t_mass = 15200; % kg
-fuel = 8250; %kg
+fuel = 6000; %kg
 lm_mass = 6950; %kg
 
 % thrust things 
 global thrust_max
-thrust_max = 400; 
+thrust_max = 600; 
 % prev value was 47000 N
 
 global R
@@ -326,13 +326,26 @@ function Start(src, event)
         % run calc pos function here 
         CalcLEMPos();
         pause(.05)
-
+        
         % still trying to work out collision shit
-        %[ii, jj] = find(abs(yVals-YPos) < y_tol);
-        %disp(ii)
-
-        if YPos <= 100
+        % try linear interpolation? Lol
+        % define query points? 
+        xq = 0:1:1280;
+        vq = interp1(xVals, yVals, xq);
+        %disp(vq)
+        XPos_r = round(XPos, 0);
+        %fprintf("The value of vq is: %f\n", vq(XPos_r))
+        % YIPPEEEEEE SHE LANDS!
+        if YPos <= (vq(XPos_r)+17)
             gameHasStarted = false;
+            % check other win conditions!
+            if (abs(vertVel) <= 3) && (abs(horzVel) <= 1.5) && (abs(th) <= 6)
+                annotation('textbox', 'Units', 'pixels', 'Position', [640, 500, 120, 60], 'BackgroundColor', 'green', 'String', 'You are the ultimate athlete!')
+            else
+                annotation('textbox', 'Units', 'pixels', 'Position', [640, 500, 80, 40], 'BackgroundColor', 'red', 'String', 'KABOOM!')
+                explosion = rectangle('Position', [XPos-100, YPos-100, 200, 200], 'FaceColor', 'red', 'Curvature', 1.0, 'EdgeColor', 'none');
+            end
+
 
         end
         
@@ -406,7 +419,7 @@ end
 function CalcLEMPos()
     global g R XPos YPos dt
     global angleBox horzvelBox vertvelBox massBox fuelBox altBox throttleBox
-    global th horzVel vertVel t_mass alt lm_mass fuel altitude throttle_frac thrust_max prop_consump
+    global th horzVel vertVel t_mass lm_mass fuel altitude throttle_frac thrust_max prop_consump
     global Lander_Patch
     global LEM
 
@@ -432,7 +445,6 @@ function CalcLEMPos()
     vertVel = vertVel + az*dt;
 
 
-
     fuel = fuel - prop_consump*dt; % times time STEP!!!!
     t_mass = lm_mass + fuel; % STILL NEED TIME STEP
 
@@ -451,22 +463,6 @@ function CalcLEMPos()
 
 end
 
-% handle rotating in its own thing :D
-% still need to workshop rotating
-%{
-function rotateLander()
-    global XPos YPos LEM Lander_Patch th angleBox dt
-    % set direction for rotating
-    RtnMtrx = [ cosd(-th), sind(-th); ...
-    -sind(-th), cosd(-th)];
-    LEM_R = LEM * RtnMtrx;
-    set(Lander_Patch, 'XData', LEM_R(1,:)+XPos, 'YData', LEM_R(2,:)+YPos)
-    disp("rotate!")
-    pause(dt)
-    %rotate(LEM, th)
-
-end
-%}
 
 % key listener
 % would like to define something where while the key is released, increment
@@ -477,8 +473,6 @@ function keyDownListener(src, event)
     global angleBox throttleBox
     global th 
     global throttle_frac
-    global XPos YPos
-    global LEM Lander_Patch
     
     keyID = event.Key;
     % switch statement for handling keyinput and changing values 
