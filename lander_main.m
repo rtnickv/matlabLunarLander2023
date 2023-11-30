@@ -2,7 +2,6 @@
 % Final Project
 % Lunar Lander
 
-
 clear,clc;
 
 % configure the figure window 
@@ -48,7 +47,7 @@ R = 1.738*10^6;
 % only 60% of max thrust is throttleable unless landing is aborted!
 global prop_consump
 %prop_consump = 3.28*10^-4; 
-prop_consump = 75;
+prop_consump = 100;
 
 % initial conditions
 global th alt horzVel vertVel throttle_frac
@@ -69,20 +68,13 @@ max_angle = 6; %deg
 % init global variables!
 global g xVals yVals
 global angleBox vertvelBox massBox fuelBox horzvelBox altBox
-global startButton optionButton
+global startButton infoButton
 global gameHasStarted
 global terrainHasGenerated
 
 g = 1.62; %m/s^2 - value for the moon
 global dt
 dt = .05; % seconds
-
-%% Start Game Code w/ Title Screen
-
-%titleScreen();
-
-
-
 
 %% Functions
 
@@ -94,9 +86,9 @@ startButton = uicontrol('Style', 'pushbutton', 'String', 'Start!', ...
     'Callback', @Start);
 
 
-optionButton = uicontrol('Style', 'pushbutton', 'String', 'Options', ...
+infoButton = uicontrol('Style', 'pushbutton', 'String', 'Info & Controls', ...
     'Position', [1180, 200, 80, 30], ...
-    'Callback', @options);
+    'Callback', @info);
 
 
 % draw black background, title, and loop for animating the background
@@ -116,7 +108,6 @@ numRows = length(yvec);
 gameHasStarted = false;
 
 % init and draw, then figure out blinking lol
-
 
 
 for rn = 1:numRows
@@ -262,16 +253,28 @@ while drawing_title
 
 end
 
-%eventually turn this into a loop
-function Start(src, event)
+function info(~, event)
+
+    % clear all
+    cla
+    % display controls info
+    annotation('textbox', 'Units', 'pixels', 'Position', [200, 200, 400, 300], 'BackgroundColor', 'black', 'Color', [1, 1, 1], 'FontSize', 18, 'FitBoxToText', 'on', 'String', ...
+        ["The controls are as follows:", "Use spacebar for thrust and the arrow keys for left and right turning.", "The goal is to land on a flat surface with a horizontal velocity", "less than 2, vertical velocity less than 5, and angle plus or minus 6 degrees. "])
+
+end
+
+function Start(~, event)
 
     % reset from title screen!
     global gameHasStarted
-    global g XPos YPos xVals yVals
+    global XPos YPos xVals yVals
     global angleBox horzvelBox vertvelBox massBox fuelBox altBox throttleBox
     global th alt horzVel vertVel throttle_frac fuel t_mass
-    global startButton optionButton
+    global startButton 
     global terrainHasGenerated
+    % clear annotation from info screen?
+    % finds all things of type 'annotation' and deletes them :P
+    delete(findall(gcf,'type','annotation'))
 
     % init textboxes 
     altBox = uicontrol('Style','edit', 'String', num2str(alt), ...
@@ -300,6 +303,7 @@ function Start(src, event)
 
 
     terrainHasGenerated = false;
+    % clear all
     cla
     bkg_rect = rectangle('Position', [0,0,1280,720],... 
         'FaceColor', 'black');
@@ -307,9 +311,11 @@ function Start(src, event)
     % generate terrain!
     generateTerrain();
     terrainHasGenerated = true;
+    % if terrain has generated, disable the start button
     if terrainHasGenerated
         set(startButton, 'Enable', 'off')
     end
+    % draw initial LEM position
     drawLEM();
 
     % main game loop?!?
@@ -319,28 +325,33 @@ function Start(src, event)
         % run calc pos function here 
         CalcLEMPos();
         pause(.05)
-        % define query points? 
+        % define query points - bounds to interpolate through
         xq = 0:1:1280;
+        % interpolate through terrain vectors to "fill in the gaps" for
+        % collisions
         vq = interp1(xVals, yVals, xq);
         % round my x position to be used as an index for vq
         XPos_r = round(XPos, 0);
         % YIPPEEEEEE SHE LANDS!
+        % comparing Y positions, the plus 17 is an offset for graphical
+        % aesthetics
         if YPos <= (vq(XPos_r)+17)
             gameHasStarted = false;
-            % check other win conditions!              
-            if (abs(vertVel) <= 3) && (abs(horzVel) <= 1.5) && (abs(th) <= 6)
-                annotation('textbox', 'Units', 'pixels', 'Position', [640, 500, 120, 60], 'BackgroundColor', 'green', 'String', 'You are the ultimate athlete!')
+            % check other win conditions!   
+            % adjusted win condition values from NASA values because I
+            % thought the game was a LITTLE challenging 
+            if (abs(vertVel) <= 5) && (abs(horzVel) <= 2) && (abs(th) <= 6)
+                annotation('textbox', 'Units', 'pixels', 'Position', [640, 500, 300, 100], 'BackgroundColor', 'black', 'String', 'You are the ultimate athlete!', 'Color', 'green', 'FontSize', 40)
             else
-                annotation('textbox', 'Units', 'pixels', 'Position', [640, 500, 80, 40], 'BackgroundColor', 'red', 'String', 'KABOOM!')
+                annotation('textbox', 'Units', 'pixels', 'Position', [640, 500, 80, 40], 'BackgroundColor', 'black', 'String', 'KABOOM!', 'FontSize', 40, 'Color', 'red')
                 explosion = rectangle('Position', [XPos-50, YPos-50, 100, 100], 'FaceColor', 'red', 'Curvature', 1.0, 'EdgeColor', 'none');
             end
 
-            % check fuel condition too
-            if (fuel <= 0)
-                gameHasStarted = false;
-                throttle_frac = 0;
-            end
-
+        end
+        % check fuel condition too
+        % if you run out of fuel, you can no longer thrust
+        while (fuel <= 0)
+            throttle_frac = 0;
         end
         
     end
@@ -430,23 +441,20 @@ function CalcLEMPos()
     az = ((throttle_frac*thrust_max*cosd(-th))/prop_consump) - (g-((vertVel^2)/(R+YPos)));
     ax = (((throttle_frac*thrust_max*sind(-th))/prop_consump));
 
-    %omit fuel consumption rate calc?
-
     XPos = XPos + horzVel*dt; % times the time step?
     YPos = YPos + vertVel*dt;
 
     horzVel = horzVel + ax*dt;
     vertVel = vertVel + az*dt;
 
-
     fuel = fuel - prop_consump*dt; % times time STEP!!!!
     t_mass = lm_mass + fuel; % STILL NEED TIME STEP
 
-    % rotation?
+    % rotation matrix
     RtnMtrx = [ cosd(-th), sind(-th); ...
                 -sind(-th), cosd(-th)];
     LEM_R = RtnMtrx * LEM;
-
+    % set lander patch position based on calculated values
     set(Lander_Patch, 'XData', LEM_R(1,:)+XPos, 'YData', LEM_R(2,:)+YPos);
 
     % set values for boxes
@@ -454,14 +462,13 @@ function CalcLEMPos()
     set(vertvelBox, 'String', num2str(vertVel));
     set(fuelBox, 'String', num2str(fuel));
     set(altBox, 'String',num2str(YPos));
+    set(massBox, 'String', num2str(t_mass))
 
 end
 
 
-% key listener
-% would like to define something where while the key is released, increment
-% goes back down
-function keyDownListener(src, event)
+% key listener(s)
+function keyDownListener(~, event)
     
     global keyID
     global angleBox throttleBox
@@ -469,7 +476,7 @@ function keyDownListener(src, event)
     global throttle_frac
     
     keyID = event.Key;
-    % switch statement for handling keyinput and changing values 
+    % switch statement for handling key input and changing values 
     switch keyID
         case 'leftarrow'
             th = th + 1;
