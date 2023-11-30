@@ -1,18 +1,16 @@
-  % Nick Vessa - MECE 117 - 10/24/23
+% Nick Vessa - MECE 117 - 10/24/23
 % Final Project
 % Lunar Lander
 
-% Current status - Lander falls but does not rotate and physics are kinda
-% scuffed
 
 clear,clc;
 
 % configure the figure window 
 scrsize = get(0,'ScreenSize');
-% create figure window
+% create figure window 
 % set resolution to 720p :D
 figPos = [30, 50, 1280, 720];
-global fig1
+%global fig1
 fig1 = figure("Position", figPos, 'Color', [0,0,0], 'Toolbar', 'None', 'KeyPressFcn', @keyDownListener, 'KeyReleaseFcn', @keyReleaseListener);
 
 % define axis limits - still need to change
@@ -36,12 +34,12 @@ axis off  % Do not display axis or
 % total mass
 global fuel t_mass lm_mass
 t_mass = 15200; % kg
-fuel = 6000; %kg
+fuel = 8250; %kg
 lm_mass = 6950; %kg
 
 % thrust things 
 global thrust_max
-thrust_max = 600; 
+thrust_max = 700; 
 % prev value was 47000 N
 
 global R
@@ -50,7 +48,7 @@ R = 1.738*10^6;
 % only 60% of max thrust is throttleable unless landing is aborted!
 global prop_consump
 %prop_consump = 3.28*10^-4; 
-prop_consump = 50;
+prop_consump = 75;
 
 % initial conditions
 global th alt horzVel vertVel throttle_frac
@@ -313,11 +311,6 @@ function Start(src, event)
         set(startButton, 'Enable', 'off')
     end
     drawLEM();
-    
-    % define tolerance for collisions
-    x_tol = 80;
-    y_tol = 10;
-    
 
     % main game loop?!?
     gameHasStarted = true;
@@ -326,26 +319,27 @@ function Start(src, event)
         % run calc pos function here 
         CalcLEMPos();
         pause(.05)
-        
-        % still trying to work out collision shit
-        % try linear interpolation? Lol
         % define query points? 
         xq = 0:1:1280;
         vq = interp1(xVals, yVals, xq);
-        %disp(vq)
+        % round my x position to be used as an index for vq
         XPos_r = round(XPos, 0);
-        %fprintf("The value of vq is: %f\n", vq(XPos_r))
         % YIPPEEEEEE SHE LANDS!
         if YPos <= (vq(XPos_r)+17)
             gameHasStarted = false;
-            % check other win conditions!
+            % check other win conditions!              
             if (abs(vertVel) <= 3) && (abs(horzVel) <= 1.5) && (abs(th) <= 6)
                 annotation('textbox', 'Units', 'pixels', 'Position', [640, 500, 120, 60], 'BackgroundColor', 'green', 'String', 'You are the ultimate athlete!')
             else
                 annotation('textbox', 'Units', 'pixels', 'Position', [640, 500, 80, 40], 'BackgroundColor', 'red', 'String', 'KABOOM!')
-                explosion = rectangle('Position', [XPos-100, YPos-100, 200, 200], 'FaceColor', 'red', 'Curvature', 1.0, 'EdgeColor', 'none');
+                explosion = rectangle('Position', [XPos-50, YPos-50, 100, 100], 'FaceColor', 'red', 'Curvature', 1.0, 'EdgeColor', 'none');
             end
 
+            % check fuel condition too
+            if (fuel <= 0)
+                gameHasStarted = false;
+                throttle_frac = 0;
+            end
 
         end
         
