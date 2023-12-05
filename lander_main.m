@@ -22,10 +22,7 @@ ymin = 0;
 axis manual % Disable automatic axis scaling
 axis equal % Set axis aspect ratio to 1
 axis([xmin, xmax, ymin, ymax]) % Set axis limits
-axis off  % Do not display axis or
-
-% axes background in figure
-
+axis off  
 
 %% define constants!!
 
@@ -36,6 +33,8 @@ t_mass = 15200; % kg
 fuel = 8250; %kg
 lm_mass = 6950; %kg
 
+% diverted from NASA values for thrust and fuel consump, to make physics
+% less janky
 % thrust things 
 global thrust_max
 thrust_max = 700; 
@@ -46,7 +45,6 @@ R = 1.738*10^6;
 
 % only 60% of max thrust is throttleable unless landing is aborted!
 global prop_consump
-%prop_consump = 3.28*10^-4; 
 prop_consump = 100;
 
 % initial conditions
@@ -61,8 +59,8 @@ throttle_frac = 0.1; % from 0-1
 
 % SAFE LANDING CONSTRAINTS - everying must be within this level of error
 global max_vert_vel max_horz_vel max_angle  
-max_vert_vel = 3; %m/s
-max_horz_vel = 1.5; %m/s
+max_vert_vel = 5; %m/s
+max_horz_vel = 2; %m/s
 max_angle = 6; %deg
 
 % init global variables!
@@ -272,6 +270,7 @@ function Start(~, event)
     global th alt horzVel vertVel throttle_frac fuel t_mass
     global startButton 
     global terrainHasGenerated
+    global max_vert_vel max_horz_vel max_angle  
     % clear annotation from info screen?
     % finds all things of type 'annotation' and deletes them :P
     delete(findall(gcf,'type','annotation'))
@@ -340,7 +339,7 @@ function Start(~, event)
             % check other win conditions!   
             % adjusted win condition values from NASA values because I
             % thought the game was a LITTLE challenging 
-            if (abs(vertVel) <= 5) && (abs(horzVel) <= 2) && (abs(th) <= 6)
+            if (abs(vertVel) <= max_vert_vel) && (abs(horzVel) <= max_horz_vel) && (abs(th) <= max_angle)
                 annotation('textbox', 'Units', 'pixels', 'Position', [640, 500, 300, 100], 'BackgroundColor', 'black', 'String', 'You are the ultimate athlete!', 'Color', 'green', 'FontSize', 40)
             else
                 annotation('textbox', 'Units', 'pixels', 'Position', [640, 500, 80, 40], 'BackgroundColor', 'black', 'String', 'KABOOM!', 'FontSize', 40, 'Color', 'red')
@@ -491,7 +490,6 @@ function keyDownListener(~, event)
             set(throttleBox, 'String', num2str(throttle_frac));
             if throttle_frac > .59
 
-                %disp("Max throttle reached")
                 throttle_frac = .59;
                     
             end
