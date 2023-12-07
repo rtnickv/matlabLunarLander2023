@@ -26,7 +26,6 @@ axis off
 
 %% define constants!!
 
-
 % total mass
 global fuel t_mass lm_mass
 t_mass = 15200; % kg
@@ -89,72 +88,14 @@ infoButton = uicontrol('Style', 'pushbutton', 'String', 'Info & Controls', ...
     'Callback', @info);
 
 
-% draw black background, title, and loop for animating the background
+% draw black background and title
 bkg_rect = rectangle('Position', [0,0,1280,720],... 
     'FaceColor', 'black');
 
 
-
-% loop for animating background
-% init 'star' locations!
-xvec = [20:20:1260];
-yvec = [20:20:700];
-
-numCols = length(xvec);
-numRows = length(yvec);
-
 gameHasStarted = false;
 
-% init and draw, then figure out blinking lol
-
-
-for rn = 1:numRows
-
-    for cn = 1:numCols
-
-        if ((mod(rn,2) ~= 0) && (mod(cn,2) ~= 0))
-            global o_star
-            o_star(cn,rn) = rectangle('Position', [xvec(cn), yvec(rn), 5, 5], 'FaceColor', 'w', 'Curvature', 1.0);
-
-        else
-            global e_star
-            e_star(cn,rn) = rectangle('Position', [xvec(cn), yvec(rn), 5, 5], 'FaceColor', 'black', 'Curvature', 1.0);
-
-        end
-        
-
-    end
-
-end
-
-% STILL ERRORS OUT, need to fix variable assignment things because it's
-% broken! 
-%{
-for rn = 1:numRows
-
-
-    if ((mod(rn,2) ~= 0) && (mod(cn,2) ~= 0))
-
-        o_star(:,rn).FaceColor = 'w';
-        pause(1)
-        o_star(:,rn).FaceColor = 'k';
-
-
-    else
-
-        e_star(:,rn).FaceColor = 'k';
-        pause(1)
-        e_star(:,rn).FaceColor = 'w';
-        
-    end
-
-        
-    
-
-end
-%}
-
-    % title?!?
+% title?!?
 drawing_title = true;
 
 while drawing_title
@@ -269,7 +210,6 @@ function Start(~, event)
     global angleBox horzvelBox vertvelBox massBox fuelBox altBox throttleBox
     global th alt horzVel vertVel throttle_frac fuel t_mass
     global startButton 
-    global terrainHasGenerated
     global max_vert_vel max_horz_vel max_angle  
     % clear annotation from info screen?
     % finds all things of type 'annotation' and deletes them :P
@@ -364,8 +304,6 @@ function generateTerrain()
     % might need to access xVals and yVals so let's make them global
     global xVals
     global yVals
-    global startButton
-    global terrainHasGenerated
     
     % create series of points!
     xVals = [0:80:1280];
