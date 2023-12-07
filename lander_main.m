@@ -361,7 +361,7 @@ end
 function CalcLEMPos()
     global g R XPos YPos dt
     global angleBox horzvelBox vertvelBox massBox fuelBox altBox throttleBox
-    global th horzVel vertVel t_mass lm_mass fuel altitude throttle_frac thrust_max prop_consump
+    global th throttle_frac thrust_max prop_consump lm_mass fuel
     global Lander_Patch
     global LEM
 
