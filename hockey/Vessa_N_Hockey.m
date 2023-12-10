@@ -38,14 +38,14 @@ didCollide = false;
 
 
 % DRAW SCREEN ELEMENTS
-% Create blue side
+% Create blue walls
 XBW = 0;
 YBW = 0;
 blueShape = [0, 0, 40, 40, 460, 460, 500, 500, 0; ...
             0, 350, 350, 40, 40, 350, 350, 0, 0];
 bluePatch = patch(blueShape(1,:)+XBW, blueShape(2,:)+YBW, 'b');
 
-% Create red side 
+% Create red walls
 XRW = 0;
 YRW = 0;
 redShape = [0, 500, 500, 460, 460, 40, 40, 0, 0; ...
@@ -67,7 +67,7 @@ Vp1y = .1;
 Vp1x = 0;
 
 % puck direction variable?
-global puckDirX puckDirY
+global puckDir
 puckDir = -1;
 redBlockDir = 1;
 
@@ -103,7 +103,7 @@ while ~escapePressed
     Yp = Yp + Vp1y*puckDir;
     Xp = Xp + Vp1x*puckDir;
 
-    % round values for collisions?
+    % round values to make collisions easier
     Yp_r = round(Yp, 0);
     Xp_r = round(Xp, 0);
 
@@ -123,9 +123,8 @@ while ~escapePressed
     set(puck, 'XData', XP+Xp, 'YData', YP+Yp)
     set(blueBlocker, 'XData', XB1+Xb1, 'YData', YB1+Yb1)
     % output variables for debug things
-    fprintf("Xp is %f and Yp is %f\n", Xp_r, Yp_r)
-    fprintf("Xb1 is %f and Yb1 is %f\n", Xb1, Yb1)
-    pause(0.001)
+    %fprintf("Xp is %f and Yp is %f\n", Xp_r, Yp_r)
+    %fprintf("Xb1 is %f and Yb1 is %f\n", Xb1, Yb1)
     % trying to get collisions working 
     % they sorta kinda work
     % each if statement compares the absolute value of the X and Y 
@@ -133,12 +132,12 @@ while ~escapePressed
     if (abs(Xp_r - Xb1) < rb) && (abs(Yp_r - Yb1) < rb)
 
         disp('collision')
-        calcPuckPos()
+        calcPuckPos(Xb1, Yb1)
 
     elseif (abs(Xp_r - Xb2) < rb) && (abs(Yp_r - Yb2) < rb)
 
         disp('collision')
-        calcPuckPos()
+        calcPuckPos(Xb2, Yb2)
 
     end
 
@@ -165,6 +164,8 @@ while ~escapePressed
         puckDir = 1;
 
     end
+    % pause to update graphics
+    pause(0.001)
     
 
 
@@ -172,8 +173,9 @@ end
 
 
 % FUNCTIONS
-
-function calcPuckPos()
+% having blockerX and blockerY as parameters allows for collisions for red
+% and blue blockers
+function calcPuckPos(blockerX, blockerY)
 
     % adjusted so puck is 1/5 the "mass" of blocker
     mp = .2; 
@@ -186,19 +188,19 @@ function calcPuckPos()
     global Vp2s Vp2n  puckDir
 
     % calculate angle between blocker and puck
-    th = -atan2(Yb1 - Yp, Xb1 - Xp);
+    th = -atan2(blockerY - Yp, blockerX - Xp);
     alpha = atan2(Vb1y, Vb1x);
     beta = atan2(Vp1y, Vp1x);
 
-    % derive velocity from position?
+    % the following calcs are from the PDF
 
     % define Vp1?
     Vp1 = sqrt(Vp1x^2 + Vp1y^2);
     Vb1 = sqrt(Vb1x^2 + Vb1y^2);
 
     % eliminate overlap prior to collision calculations
-    Xp2 = Xb1 - (rp + rb) * cos(th);
-    Yp2 = Yb1 + (rp + rb) * sin(th);
+    Xp2 = blockerX - (rp + rb) * cos(th);
+    Yp2 = blockerY + (rp + rb) * sin(th);
 
     % set to arbitrary values?
     Vb1n = Vb1 * cos(th + alpha);
