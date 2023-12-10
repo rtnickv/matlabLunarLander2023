@@ -67,7 +67,7 @@ Vp1y = .1;
 Vp1x = 0;
 
 % puck direction variable?
-global puckDir
+global puckDirX puckDirY
 puckDir = -1;
 redBlockDir = 1;
 
@@ -118,23 +118,51 @@ while ~escapePressed
         redBlockDir = 1;
 
     end
-
+    % update position for blockers and pucks
     set(redBlocker, 'XData', XR1+Xb2, 'YData', YR1+Yb2)
     set(puck, 'XData', XP+Xp, 'YData', YP+Yp)
     set(blueBlocker, 'XData', XB1+Xb1, 'YData', YB1+Yb1)
+    % output variables for debug things
     fprintf("Xp is %f and Yp is %f\n", Xp_r, Yp_r)
     fprintf("Xb1 is %f and Yb1 is %f\n", Xb1, Yb1)
     pause(0.001)
-    % trying to get collisions working :/
-    if (Xp_r == Xb1) && (Yp_r == Yb1)
+    % trying to get collisions working 
+    % they sorta kinda work
+    % each if statement compares the absolute value of the X and Y 
+    % positions of the puck and blocker
+    if (abs(Xp_r - Xb1) < rb) && (abs(Yp_r - Yb1) < rb)
 
         disp('collision')
         calcPuckPos()
 
-    elseif (Xp_r == Xb2) && (Yp_r == Yb2)
+    elseif (abs(Xp_r - Xb2) < rb) && (abs(Yp_r - Yb2) < rb)
 
         disp('collision')
         calcPuckPos()
+
+    end
+
+    % basic wall collision things
+    % just switched puck direction based on whether it hits the right wall
+    % or left wall
+    if (abs(Xp_r - 460) < rp)
+
+        puckDir = -1;
+
+    elseif (abs(Xp_r - 40) < rp)
+
+        puckDir = 1;
+
+    end
+
+    % same deal as above but with top and bottom walls
+    if (abs(Yp_r - 660) < rp)
+
+        puckDir = -1;
+
+    elseif (abs(Yp_r - 40) < rp)
+
+        puckDir = 1;
 
     end
     
@@ -155,8 +183,7 @@ function calcPuckPos()
     rp = 15;
 
     global Xb1 Yb1 Xb2 Yb2 Xp Yp Xp2 Yp2 Vb1 Vb1y Vb1x Vp1 Vp1y Vp1x Vb1n Vb1s Vp1n Vp1s
-    global Vp2s Vp2n Vb2s Vb2n puckDir
-    global escapePressed puckPatch XP YP
+    global Vp2s Vp2n  puckDir
 
     % calculate angle between blocker and puck
     th = -atan2(Yb1 - Yp, Xb1 - Xp);
@@ -181,13 +208,13 @@ function calcPuckPos()
     Vp1s = Vp1 * sin(th + beta);
 
     Vp2s = Vp1s;
-    Vb2s = Vb1s;
-
+    
     P1n = mp * Vp1n + mb * Vb1n;
     % flip direction on collision
     if P1n < 0
         puckDir = 1;
     end
+
     KE1 = .5*mp*(Vp1^2) + .5*mb*(Vb1^2);
 
     a = (mp^2 + mp * mb)/mb;
@@ -205,8 +232,11 @@ function calcPuckPos()
     Vp2x = Vp2*cos(beta2);
     Vp2y = Vp2*sin(beta2);
 
-    Yp = Yp2 + Vp2y*puckDir;
-    Xp = Xp2 + Vp2x*puckDir;
+    Vp1y = Vp2y;
+    Vp1x = Vp2x;
+
+    Yp = Yp2 + Vp1y*puckDir;
+    Xp = Xp2 + Vp1x*puckDir;
 
 end
 
@@ -221,13 +251,13 @@ function keyDownListener(~, event)
         case 'escape'
             escapePressed = 1;
         case 'uparrow'
-            Yb1 = Yb1 + 1;
+            Yb1 = Yb1 + 5;
         case 'downarrow'
-            Yb1 = Yb1 - 1;
+            Yb1 = Yb1 - 5;
         case 'leftarrow'
-            Xb1 = Xb1 - 1;
+            Xb1 = Xb1 - 5;
         case 'rightarrow'
-            Xb1 = Xb1 + 1;
+            Xb1 = Xb1 + 5;
 
 
     end
