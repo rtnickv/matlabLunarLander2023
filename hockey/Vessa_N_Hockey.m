@@ -7,7 +7,7 @@ clear, clc;
 % init figure window
 scrsize = get(0,'ScreenSize');
 figPos = [30, 50, 500, 700];
-fig1 = figure("Position", figPos, 'Color', [1,1,1], 'Toolbar', 'None', 'WindowButtonMotionFcn', @MouseMoveTracker, 'KeyPressFcn', @keyDownListener);
+fig1 = figure("Position", figPos, 'Color', [1,1,1], 'Toolbar', 'None', 'KeyPressFcn', @keyDownListener);
 
 % define axis limits
 xmax = 500;
@@ -20,6 +20,7 @@ axis manual % Disable automatic axis scaling
 axis equal % Set axis aspect ratio to 1
 axis([xmin, xmax, ymin, ymax]) % Set axis limits
 axis on % Do not display axis or
+hold on
 % axes background in figure
 
 
@@ -59,8 +60,15 @@ Xb2 = 250;
 Yb2 = 550;
 Xp = 250;
 Yp = 350;
-Vp1y = -.1;
+Vb1x = 0;
+Vb1y = 0;
+Vb2x = 1;
+Vp1y = .1;
 Vp1x = 0;
+
+% puck direction variable?
+puckDir = -1;
+redBlockDir = 1;
 
 % create objects 
 % set radii for puck and blockers
@@ -71,53 +79,45 @@ theta = linspace(0, 2*pi, 181);
 % blue blocker
 XB1 = rb*sin(theta);
 YB1 = rb*cos(theta);
-blueBlockerPatch = patch(XB1+Xb1, YB1+Yb1, 'b');
-% get centroid of blue blocker
-%[XB1C, YB1C] = centroid(polyshape(redBlockerPatch.Shape.Vertices));
+blueBlocker = patch(XB1+Xb1, YB1+Yb1, 'b');
 
 
 % red blocker
 XR1 = rb*sin(theta);
 YR1 = rb*cos(theta);
-redBlockerPatch = patch(XR1+Xb2, YR1+Yb2, 'r');
-% get centroid of red blocker
-%[XR1C, YR1C] = centroid(polyshape(redBlockerPatch.Shape.Vertices));
+redBlocker = patch(XR1+Xb2, YR1+Yb2, 'r');
+
 
 % puck
 global XP YP
 XP = rp*sin(theta);
 YP = rp*cos(theta);
-global puckPatch puckPoly
-puckPatch = patch(XP+Xp, YP+Yp, 'k');
-% get centroid of puck
-%[XPC, YPC] = centroid(polyshape(puckPatch.Shape.Vertices));
+puck = patch(XP+Xp, YP+Yp, 'k');
 
-% NEED TO SOMEHOW SET THE PUCK WITH AN INITIAL VELOCITY
-% CREATE 2x2 ARRAY TO STORE PREV POS AND CURRENT POS
 
 % MAIN GAME LOOP
 while ~escapePressed
 
-    mouseX = num2str(Xm);
-    mouseY = num2str(Ym);
-    % mouse tracking for blue blocker
-    set(blueBlockerPatch, 'XData', XB1+Xm, 'YData', YB1+Ym)
     % have puck move initially
-    Yp = Yp + Vp1y;
-    Xp = Xp + Vp1x;
+    Yp = Yp + Vp1y*puckDir;
+    Xp = Xp + Vp1x*puckDir;
     % move red blocker back and forth!?!
-    if (Xb2 <= 350) && (Xb2 >= 200)
+    Xb2 = Xb2 + Vb2x*redBlockDir;
+    if Xb2 >= 400
 
-        Xb2 = Xb2 + 5;
-    else 
+        redBlockDir = -1;
 
-        Xb2 = 200;
+    elseif Xb2 <= 100
+
+        redBlockDir = 1;
 
     end
-    set(redBlockerPatch, 'XData', XR1+Xb2, 'YData', YR1+Yb2)
-    set(puckPatch, 'XData', XP+Xp, 'YData', YP+Yp)
 
-    calcPuckPos();
+    set(redBlocker, 'XData', XR1+Xb2, 'YData', YR1+Yb2)
+    set(puck, 'XData', XP+Xp, 'YData', YP+Yp)\
+
+    fprintf("Xp is %f and Yp is %f\n", Xp, Yp)
+    fprintf("Xb1 is %f and Yb1 is %f\n", Xb1, Yb1)
     pause(0.01)
     % trying to get collisions working :/
     
@@ -126,7 +126,6 @@ end
 
 
 % FUNCTIONS
-% mouse tracking!
 
 function calcPuckPos()
 
@@ -146,13 +145,11 @@ function calcPuckPos()
     alpha = atan2(Vb1y, Vb1x);
     beta = atan2(Vp1y, Vp1x);
 
-    Xb1 = Xm;
-    Yb1 = Ym;
-
     % derive velocity from position?
 
     % define Vp1?
     Vp1 = sqrt(Vp1x^2 + Vp1y^2);
+    Vb1 = sqrt(Vb1x^2 + Vb1y^2);
 
     % eliminate overlap prior to collision calculations
     Xp2 = Xb1 - (rp + rb) * cos(th);
@@ -187,25 +184,25 @@ function calcPuckPos()
 
 end
 
-function MouseMoveTracker(~, event)
-
-    global Xm Ym
-    mousePos = get(gca, 'CurrentPoint');
-    Xm = mousePos(1,1);
-    Ym = mousePos(1,2);
-  
-
-end
 
 function keyDownListener(~, event)
 
-    global KeyID escapePressed
+    global KeyID escapePressed Vb1x Vb1y
     KeyID = event.Key;
     
     switch KeyID
 
         case 'escape'
             escapePressed = 1;
+        case 'uparrow'
+            Vb1y = Vb1y + 1;
+        case 'downarrow'
+            Vb1y = Vb1y - 1;
+        case 'leftarrow'
+            Vb1x = Vb1x - 1;
+        case 'rightarrow'
+            Vb1x = Vb1x + 1;
+
 
     end
 
